@@ -14,42 +14,54 @@ knitr::opts_chunk$set(
 ```
 
 # MultiCoex
-
+< A tagline here>
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of MultiCoex is to ...
+
+## Description
+
+The goal of MultiCoex is to create a method to better transform and utilize the 
+information to provide insights into how the filtered co-expression network 
+changes and aligns to reference data provides a quick and easy way to go in 
+depth into co-expression analysis.
 
 ## Installation
 
 You can install the development version of MultiCoex from [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("pak")
-pak::pak("calebji123/MultiCoex")
+require("devtools")
+devtools::install_github("calebji123/MultiCoex", build_vignettes = TRUE)
+library("MultiCoex")
 ```
 
-## Example
-
-This is a basic example which shows you how to solve a common problem:
-
-```{r example}
-library(MultiCoex)
-## basic example code
+To run the Shiny app:
+```r
+# Under construction
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+## Overview
 
-```{r cars}
-summary(cars)
-```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
+Something about the commands
+An image
 
-You can also embed plots, for example:
 
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
+## Contributions
 
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
+ADD CONTRIBUTIONS HERE
+
+
+## References
+
+FULL REFERENCES
+
+
+## Acknowledgements
+
+This package was developed as part of an assessment for 2025 BCB410H: Applied 
+Bioinformatics course at the University of Toronto, Toronto, 
+CANADA. MultiCoex welcomes issues, enhancement requests, and other contributions. 
+To submit an issue, use the GitHub issues.
+
