@@ -1,8 +1,9 @@
 ---
-title: "Introduction_MultiCoex"
+title: "A first look into MultiCoex"
+author: "Caleb Ji"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction_MultiCoex}
+  %\VignetteIndexEntry{A first look into MultiCoex}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,3 +18,110 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(MultiCoex)
 ```
+
+
+## Introduction
+
+`MultiCoex` is a package for differential coexpression analysis, using multilayered 
+networks to find and analyze communities of genes. This could be useful for
+differential coexpression across tissues, developmental stages, or conditions.
+
+To download `MultiCoex` do as follows:
+``` r
+require("devtools")
+devtools::install_github("calebji123/MultiCoex", build_vignettes = TRUE)
+library("MultiCoex")
+```
+To list all sample functions available in the package:
+``` r
+ls("package:TestingPackage")
+```
+
+To list all sample datasets available in the package:
+``` r
+data(package = "TestingPackage")
+```
+
+
+## Quick tutorial of functions 
+
+We will be using the three datasets provided in the package to demonstrate the
+function's utility. You can read more about them:
+``` r
+?GTExBrainTrimmed
+?GTExHeartTrimmed
+?GTExLiverTrimmed
+```
+
+First, we calculate their coexpression through the first function 
+`DevelopCoexpressionNetwork` which uses BioNERO (internally uses WGCNA) to 
+create the coexpression data. 
+
+``` r
+library("SummarizedExperiment")
+# Turn each of them into coexpression matricies
+brain_net <- DevelopCoexpressionNetwork(SummarizedExperiment::assay(GTExBrainTrimmed, "tpm"),
+                                        cor_method = "pearson")
+heart_net <- DevelopCoexpressionNetwork(SummarizedExperiment::assay(GTExHeartTrimmed, "tpm"),
+                                        cor_method = "pearson")
+liver_net <- DevelopCoexpressionNetwork(SummarizedExperiment::assay(GTExLiverTrimmed, "tpm"),
+                                        cor_method = "pearson")
+```
+
+Then we layer their adjacency matrices into one object. 
+``` r
+layers <- list(Brain = brain_net$adjacency_matrix, 
+               Heart = heart_net$adjacency_matrix, 
+               Liver = liver_net$adjacency_matrix)
+```
+
+Since we trimmed these datasets, we will need to make sure that they all contain 
+the same set of common genes, which we will define as the intersection of all their genes. 
+``` r
+common_genes <- Reduce(intersect, list(
+  rownames(brain_net$adjacency_matrix),
+  rownames(heart_net$adjacency_matrix),
+  rownames(liver_net$adjacency_matrix)
+))
+```
+
+The recommended omega (parameter which affects the level at which the layers are 
+connected in the multilayer network) should be tuned based on the magnitude of 
+the edge weights. Here, we recommend 500 times the median edge magnitude. 
+
+``` r
+ut <- function(M) M[upper.tri(M, diag = FALSE)]
+typ_w <- median(unlist(lapply(layers, function(A) abs(ut(A))[abs(ut(A)) > 0])))
+omega <- 500 * typ_w
+```
+
+We run `BuildMultilayerNetwork` with these options. Threshold is at `0.05` to ensure
+that the coexpression network is not too busy and we filter out noise.
+
+``` r
+multilayered_network <- BuildMultilayerNetwork(layers, 
+                                               genes = common_genes,
+                                               match_genes = TRUE,
+                                               omega = omega,
+                                               threshold = 0.05)
+```
+
+You can inspect the output:
+
+``` r
+class(multilayered_network)
+```
+
+Then we discover gene communities in this multilayer network:
+``` r
+communities <- DetectMultilayerCommunities(multilayered_network)
+```
+
+You can inspect the output of this function:
+
+``` r
+class(communities)
+```
+
+
+

@@ -65,7 +65,7 @@ DetectMultilayerCommunities <- function(
   state_map <- do.call(rbind, idx_list)
   state_membership <- transform(
     state_map,
-    community = mem[state_id]
+    community = mem[state_map$state_id]
   )
 
   # 4) Aggregate: consensus community per gene

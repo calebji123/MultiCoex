@@ -14,17 +14,23 @@ knitr::opts_chunk$set(
 ```
 
 # MultiCoex
-< A tagline here>
 <!-- badges: start -->
 <!-- badges: end -->
 
 
 ## Description
 
-The goal of MultiCoex is to create a method to better transform and utilize the 
-information to provide insights into how the filtered co-expression network 
-changes and aligns to reference data provides a quick and easy way to go in 
-depth into co-expression analysis.
+MultiCoex is a package to analyze and interperet differential coexpression data.
+This occurs when coexpression data is created for specific tissues, conditions, or 
+developmental states. Identifying consistent and differential gene communities
+throughout the conditions, highlighting regulatory elements and changes in 
+regulatory structures. Based on the algorithms described in Russell et al. (2023),
+MultiCoex aims to provide the first implementation of differential coexpression
+analysis using multilayered networks in an R package, with smooth integration
+with coexpression pipelines and visualization tools. This package was developed
+for BCB410H (Applied Bioinformatics) course at the University of Toronto. It was
+developed using `R version 4.5.1 (2025-06-13)`, `Platform: aarch64-apple-darwin20`
+and `Running under: macOS Sequoia 15.5`.
 
 ## Installation
 
@@ -43,19 +49,47 @@ To run the Shiny app:
 
 ## Overview
 
+Take a look at the vignette for a quick tutorial on how to use the package:
 
-Something about the commands
-An image
+```{r}
+ls("package:MultiCoex")
+data(package = "MultiCoex") 
+browseVignettes("MultiCoex")
+```
+
+`MultiCoex` contains a couple of major functions:
+1. **DevelopCoexpressionNetwork** for checking your data and concisely running the 
+`BioNERO`pipeline to create a coexpression adjacency matrix.
+2. **BuildMultilayerNetwork** for building a multilayered network from multiple 
+coexpression adjacency matrices to be used in subsequent steps, 
+stored in a supra-adjacency matrix.
+3. **DetectMultilayerCommunities** for analyzing the multilayered network 
+and using the Louvain algorithm to create communities throughout the network.
+4. **PlotCoexpressionNetwork** for plotting elements of the multilayered
+network in a multilayered graph, to differentiate between layers and provide 
+interpretability.
 
 
 ## Contributions
 
-ADD CONTRIBUTIONS HERE
+The author of this package is Caleb Ji. The author wrote the **DevelopCoexpressionNetwork**
+function, which checks the validity of the data, optionally processes it from raw counts to 
+TPM and log TPM, and runs the BioNERO R package coexpression pipeline. The author
+wrote the **BuildMultilayerNetwork** to construct the sparse coexpression network
+and combine layers into one matrix, inspired by Russell et al. (2023)'s method
+of creating multilayered networks.  The **DetectMultilayerCommunities** function 
+uses code with inspiration from Russell et al. (2023)'s python scripts to 
+find communities in the multilayer networks. 
 
 
 ## References
 
-FULL REFERENCES
+- Langfelder, P., & Horvath, S. (2008). WGCNA: An R package for weighted correlation network analysis. BMC Bioinformatics, 9, 559. https://doi.org/10.1186/1471-2105-9-559
+- Almeida-Silva, F., & Venancio, T. M. (2022). BioNERO: An all-in-one R/Bioconductor package for comprehensive and easy biological network reconstruction. Functional & Integrative Genomics, 22, 131–136. https://doi.org/10.1007/s10142-021-00821-9
+- Russell, M., Aqil, A., Saitou, M., Gokcumen, O., Masuda, N. (2023). Gene communities in co-expression networks across different tissues. PLoS Comput Biol, 19(11). https://doi.org/10.1371/journal.pcbi.1011616
+- The GTEx Consortium. (2020). The GTEx Consortium atlas of genetic regulatory effects across human tissues. Science, 369(6509), 1318–1330. https://doi.org/10.1126/science.aaz1776 
+- Silva, A. (2022; revised 2025) TestingPackage: An Example R Package For BCB410H.
+Unpublished. URL https://github.com/anjalisilva/TestingPackage.
 
 
 ## Acknowledgements

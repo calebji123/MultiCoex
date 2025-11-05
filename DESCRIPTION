@@ -1,17 +1,31 @@
 Package: MultiCoex
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Multilayered network analysis of differential coexpression
 Version: 0.1.0
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
+      "Caleb", "Ji",
+      email = "caleb.ji@mail.utoronto.ca",
       role = c("aut", "cre")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
+Description: Finding gene communities in differential coexpression (difference in
+    coexpression networks across conditions) using multilayered networks with 
+    integration with coexpression pipelines and visualization methods
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+LazyDataCompression: xz
 RoxygenNote: 7.3.3
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Depends: 
+    R (>= 3.5)
+Imports: 
+    BioNERO,
+    igraph,
+    Matrix
