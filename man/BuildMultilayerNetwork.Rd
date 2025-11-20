@@ -51,6 +51,6 @@ adj_list <- list(
   brain = GTExBrainTrimmed,
   heart = GTExHeartTrimmed
 )
-ml <- build_multilayer(adj_list, threshold = "0.05", omega = 0.5)
+ml <- BuildMultilayerNetwork(adj_list, threshold = "0.05", omega = 0.5)
 }
 }

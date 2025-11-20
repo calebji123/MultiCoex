@@ -51,7 +51,7 @@ To run the Shiny app:
 
 Take a look at the vignette for a quick tutorial on how to use the package:
 
-```{r}
+``` r
 ls("package:MultiCoex")
 data(package = "MultiCoex") 
 browseVignettes("MultiCoex")
