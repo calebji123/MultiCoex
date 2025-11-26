@@ -6,6 +6,7 @@
 \usage{
 DevelopCoexpressionNetwork(
   dataset,
+  assay_name = "tpm",
   TPM_normalize = FALSE,
   gene_lengths = NULL,
   log_scale = FALSE,
@@ -20,6 +21,10 @@ DevelopCoexpressionNetwork(
 \item{dataset}{A numeric matrix or data frame of gene expression values,
 with genes in rows and samples in columns. Must have rownames (gene IDs)
 and ideally column names (sample IDs).}
+
+\item{assay_name}{A string to refer to the name of the assay for the dataset
+if the dataset is of type SummarizedExperiment. If no processing is done,
+this name must be "tpm"}
 
 \item{TPM_normalize}{Logical. If TRUE, performs TPM normalization assuming
 input data are raw read counts. Default = FALSE.}

@@ -6,8 +6,8 @@
 #' (e.g., tissue/timepoint). The result includes a sparse supra-adjacency matrix
 #' with omega-coupling between the *same gene* across layers.
 #'
-#' @param layers A **named** list. Each element is either:
-#'   - a numeric gene x gene adjacency matrix (symmetric), or
+#' @param layers A **named** list. Each element is:
+#'   a numeric gene x gene adjacency matrix (symmetric)
 #'   All layers must have the **same genes and order** (or provide `genes` and set `match_genes = TRUE`).
 #' @param threshold How to sparsify layer adjacencies:
 #'   - numeric in (0,1): keep top n% of edges per layer
@@ -28,19 +28,30 @@
 #' @examples
 #' \dontrun{
 #' # Using datasets available in the package
+#' liver_adj_mat = DevelopCoexpressionNetwork(GTExLiverTrimmed,
+#'                                            cor_method = "spearman",
+#'                                            seed = 123)
+#' brain_adj_mat = DevelopCoexpressionNetwork(GTExBrainTrimmed,
+#'                                            cor_method = "spearman",
+#'                                            seed = 123)
+#' # In my tests, this one sometimes takes a long time.
+#' heart_adj_mat = DevelopCoexpressionNetwork(GTExHeartTrimmed,
+#'                                            cor_method = "spearman",
+#'                                            seed = 123)
+#'
 #' adj_list <- list(
-#'   liver = GTExLiverTrimmed,  # GxG symmetric
-#'   brain = GTExBrainTrimmed,
-#'   heart = GTExHeartTrimmed
+#'   liver = liver_adj_mat,  # GxG symmetric
+#'   brain = brain_adj_mat,
+#'   heart = heart_adj_mat
 #' )
-#' ml <- BuildMultilayerNetwork(adj_list, threshold = "0.05", omega = 0.5)
+#' ml <- BuildMultilayerNetwork(adj_list, threshold = 0.05, omega = 0.5)
 #' }
 #' @export
 #' @import Matrix
 BuildMultilayerNetwork <- function(
     layers,
     threshold = 0.05,
-    omega = 1,
+    omega = 0.5,
     genes = NULL,
     match_genes = FALSE
 ){
@@ -146,7 +157,7 @@ BuildMultilayerNetwork <- function(
     k <- ceiling(length(ut) * threshold)
     cut <- sort(abs(ut), decreasing = TRUE, na.last = NA)[k]
     B <- (abs(A) >= cut) * A
-  } else if (identical(threshold, "none")) {
+  } else if (threshold == "none") {
     B <- A
   } else {
     stop("Unrecognized `threshold`. Use numeric in (0,1), or 'none'.")

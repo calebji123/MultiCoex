@@ -12,6 +12,9 @@
 #' @param dataset A numeric matrix or data frame of gene expression values,
 #'   with genes in rows and samples in columns. Must have rownames (gene IDs)
 #'   and ideally column names (sample IDs).
+#' @param assay_name A string to refer to the name of the assay for the dataset
+#'   if the dataset is of type SummarizedExperiment. If no processing is done,
+#'   this name must be "tpm"
 #' @param TPM_normalize Logical. If TRUE, performs TPM normalization assuming
 #'   input data are raw read counts. Default = FALSE.
 #' @param gene_lengths A vector of gene lengths in the order of the genes in the dataset.
@@ -40,13 +43,15 @@
 #' # Using GTEx brain tissue dataset available within the package
 #' dim(GTExBrainTrimmed)
 #' net <- DevelopCoexpressionNetwork(GTExBrainTrimmed,
-#'                                   cor_method = "spearman",
+#'                                   cor_method = "pearson",
 #'                                   seed = 123)
 #' }
 #'
 #' @export
 #' @import BioNERO
+#' @import SummarizedExperiment
 DevelopCoexpressionNetwork <- function(dataset,
+                                       assay_name="tpm",
                                        TPM_normalize = FALSE,
                                        gene_lengths = NULL,
                                        log_scale = FALSE,
@@ -59,35 +64,53 @@ DevelopCoexpressionNetwork <- function(dataset,
   cor_method <- match.arg(cor_method)
 
   # Performing checks of user input
-  if (!is.matrix(dataset) && !is.data.frame(dataset) && !class()) {
+  if (!is.matrix(dataset) && !is.data.frame(dataset) && !(class(dataset) == "SummarizedExperiment")) {
     stop("Input `dataset` must be a numeric matrix or data.frame of gene expression values.")
   }
 
+  # If it is a summarized experiment, the assay must be in the summarized experiment
+  # TODO
+
   if (is.null(rownames(dataset))) {
     stop("Input `dataset` must have rownames representing gene identifiers.")
-  }
-
-  if (!is.numeric(as.matrix(dataset))) {
-    stop("Expression matrix must be numeric.")
   }
 
   if (TPM_normalize && is.null(gene_lengths)) {
     stop("Gene lengths must be provided if TPM_normalize is set to TRUE.")
   }
 
-  dataset <- as.data.frame(dataset)
   # Optional processing to TPM normalize raw counts and log scale TPM
-  if (TPM_normalize) {
-    rpk <- dataset / (gene_lengths / 1000)
-    per_million <- colSums(rpk) / 1e6
-    dataset <- sweep(rpk, 2, per_million, "/")
-  }
+  if (TPM_normalize | log_scale) {
+    if (class(dataset) == "SummarizedExperiment") {
+      raw_data <- assay(dataset, assay_name)
+    }
+    else {
+      raw_data <- as.data.frame(dataset)
+    }
+    # Check on the expression matrix
+    if (!is.numeric(raw_data)) {
+      stop("Expression matrix must be numeric.")
+    }
+    if (TPM_normalize) {
+      rpk <- raw_data / (gene_lengths / 1000)
+      per_million <- colSums(rpk) / 1e6
+      raw_data <- sweep(rpk, 2, per_million, "/")
+    }
 
-  if (log_scale) {
-    dataset <- log2(dataset + 1)
+    if (log_scale) {
+      raw_data <- log2(raw_data + 1)
+    }
+
+    if (class(dataset) == "SummarizedExperiment") {
+      assays(dataset, "tpm") <- raw_data
+    }
+    else {
+      dataset <- raw_data
+    }
   }
 
   # Run BioNERO pipeline to get the coexpression network
+  # Source from the BioNERO vignette
   final_exp <- BioNERO::exp_preprocess(dataset,
                                        min_exp = min_exp,
                                        variance_filter = variance_filter)

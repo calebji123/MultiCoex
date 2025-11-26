@@ -46,10 +46,20 @@ with omega-coupling between the *same gene* across layers.
 \examples{
 \dontrun{
 # Using datasets available in the package
+liver_adj_mat = DevelopCoexpressionNetwork(GTExLiverTrimmed,
+                                           cor_method = "spearman",
+                                           seed = 123)
+brain_adj_mat = DevelopCoexpressionNetwork(GTExBrainTrimmed,
+                                           cor_method = "spearman",
+                                           seed = 123)
+heart_adj_mat = DevelopCoexpressionNetwork(GTExHeartTrimmed,
+                                           cor_method = "spearman",
+                                           seed = 123)
+
 adj_list <- list(
-  liver = GTExLiverTrimmed,  # GxG symmetric
-  brain = GTExBrainTrimmed,
-  heart = GTExHeartTrimmed
+  liver = liver_adj_mat,  # GxG symmetric
+  brain = brain_adj_mat,
+  heart = heart_adj_mat
 )
 ml <- BuildMultilayerNetwork(adj_list, threshold = "0.05", omega = 0.5)
 }
