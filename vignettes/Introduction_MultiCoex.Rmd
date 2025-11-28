@@ -34,12 +34,12 @@ library("MultiCoex")
 ```
 To list all sample functions available in the package:
 ``` r
-ls("package:TestingPackage")
+ls("package:MultiCoex")
 ```
 
 To list all sample datasets available in the package:
 ``` r
-data(package = "TestingPackage")
+data(package = "MultiCoex")
 ```
 
 
@@ -125,8 +125,9 @@ class(communities)
 
 
 
-# Add session info 
-
+```{r}
+sessionInfo()
+```
 
 
 

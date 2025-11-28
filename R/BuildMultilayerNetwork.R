@@ -108,7 +108,7 @@ BuildMultilayerNetwork <- function(
   layer_names <- names(layers)
 
   # 2) Threshold adjacency matrices to create sparse networks
-  layer_adj <- lapply(layers, function(A) .threshold_adj(A, threshold = threshold))
+  layer_adj <- lapply(layers, function(A) .thresholdAdj(A, threshold = threshold))
 
   # 3) Building multilayered network
   blocks <- vector("list", L)
@@ -149,7 +149,7 @@ BuildMultilayerNetwork <- function(
 }
 
 # Helper function for thresholding an adjacency matrix
-.threshold_adj <- function(A, threshold = 0.05) {
+.thresholdAdj <- function(A, threshold = 0.05) {
   diag(A) <- 0
   if (is.numeric(threshold)) {
     # keep top p of *upper triangle* absolute weights
