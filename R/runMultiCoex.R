@@ -14,7 +14,8 @@
 #'
 #' @references
 #' Grolemund, G. (2015). Learn Shiny - Video Tutorials. \href{https://shiny.rstudio.com/tutorial/}{Link}
-#' Anjali Silva
+#' Silva, A. (2022; revised 2025) TestingPackage: An Example R Package For BCB410H.
+#' Unpublished. URL https://github.com/anjalisilva/TestingPackage.
 #'
 #' @export
 #' @importFrom shiny runApp

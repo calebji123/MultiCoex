@@ -5,7 +5,16 @@
 
 <!-- badges: start -->
 
-<!-- badges: end -->
+[![CodeFactor](https://www.codefactor.io/repository/github/calebji123/MultiCoex/badge)](https://www.codefactor.io/repository/github/calebji123/MultiCoex)
+[![GitHub
+issues](https://img.shields.io/github/issues/calebji123/MultiCoex)](https://github.com/calebji123/MultiCoex/issues)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+![GitHub language
+count](https://img.shields.io/github/languages/count/calebji123/MultiCoex)
+![GitHub commit activity
+(branch)](https://img.shields.io/github/commit-activity/y/calebji123/MultiCoex/master)
+<!-- badges: end --> Multilayered approach to analyzing differential
+coexpression
 
 ## Description
 
@@ -37,7 +46,7 @@ library("MultiCoex")
 To run the Shiny app:
 
 ``` r
-# Under construction
+MultiCoex::runMultiCoex()
 ```
 
 ## Overview
@@ -51,17 +60,21 @@ data(package = "MultiCoex")
 browseVignettes("MultiCoex")
 ```
 
-`MultiCoex` contains a couple of major functions: 1.
-**DevelopCoexpressionNetwork** for checking your data and concisely
+`MultiCoex` contains five major functions: 1.
+**developCoexpressionNetwork** for checking your data and concisely
 running the `BioNERO`pipeline to create a coexpression adjacency matrix.
-2. **BuildMultilayerNetwork** for building a multilayered network from
+2. **buildMultilayerNetwork** for building a multilayered network from
 multiple coexpression adjacency matrices to be used in subsequent steps,
-stored in a supra-adjacency matrix. 3. **DetectMultilayerCommunities**
+stored in a supra-adjacency matrix. 3. **detectMultilayerCommunities**
 for analyzing the multilayered network and using the Louvain algorithm
 to create communities throughout the network. 4.
-**PlotCoexpressionNetwork** for plotting elements of the multilayered
-network in a multilayered graph, to differentiate between layers and
-provide interpretability.
+**plotCoexpressionNetwork** for plotting genes in a neighborhood around
+a seed gene in a multilayered graph, with colored edges representing
+layers. 5. **runMultiCoex** for creating the shiny interface, which is
+an interactive web application that can upload data and interactively
+run the functions provided in the `MultiCoex` package.
+
+![](./inst/extdata/MultiCoex_summary_figure.png)
 
 ## Contributions
 
@@ -95,6 +108,22 @@ multilayer networks.
 - Silva, A. (2022; revised 2025) TestingPackage: An Example R Package
   For BCB410H. Unpublished. URL
   <https://github.com/anjalisilva/TestingPackage>.
+- BioRender. (2020). Image created by Ji, C. Retrieved November 30,
+  2025, from <https://app.biorender.com/>
+- Chang, W., Cheng, J., Allaire, J. J., Sievert, C., Schloerke, B., Xie,
+  Y., Allen, J., McPherson, J., Dipert, A., & Borges, B. (2024). Shiny:
+  Web application framework for R (Version 1.8.0) \[Computer software\].
+  RStudio, PBC. <https://shiny.rstudio.com/>
+- Csardi, G., & Nepusz, T. (2006). igraph: Network analysis and
+  visualization (Version 2.2.1) \[Computer software\].
+  <https://igraph.org/>
+- Bates, D., & Maechler, M. (2024). Matrix: Sparse and dense matrix
+  classes and methods (Version 1.7.4) \[Computer software\].
+  <https://cran.r-project.org/package=Matrix>
+- Morgan, M., Obenchain, V., Hester, J., & Pagès, H. (2023).
+  SummarizedExperiment: A container for summarized genomic data (Version
+  1.38.1) \[R package\]. Bioconductor.
+  <https://bioconductor.org/packages/SummarizedExperiment>
 
 ## Acknowledgements
 

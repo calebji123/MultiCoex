@@ -11,5 +11,5 @@ citEntry(entry = "Unpublished",
 
   textVersion  =
   paste("Ji, C. (2025) MultiCoex: Multilayered approach to analyzing differential
-         coexpression. URL https://github.com/calebji123/MultiCoex.")
+         coexpression. Unpublished. URL https://github.com/calebji123/MultiCoex.")
 )

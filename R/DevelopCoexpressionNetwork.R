@@ -12,118 +12,167 @@
 #' @param dataset A numeric matrix or data frame of gene expression values,
 #'   with genes in rows and samples in columns. Must have rownames (gene IDs)
 #'   and ideally column names (sample IDs).
-#' @param assay_name A string to refer to the name of the assay for the dataset
+#' @param assayName A string to refer to the name of the assay for the dataset
 #'   if the dataset is of type SummarizedExperiment. If no processing is done,
 #'   this name must be "tpm"
-#' @param TPM_normalize Logical. If TRUE, performs TPM normalization assuming
+#' @param TPMNormalize A logical. If TRUE, performs TPM normalization assuming
 #'   input data are raw read counts. Default = FALSE.
-#' @param gene_lengths A vector of gene lengths in the order of the genes in the dataset.
-#'   Must be provided if TPM normalize is set to TRUE. Default = NULL
-#' @param log_scale Logical. If TRUE, log2-transforms the data
-#'   (after adding a pseudocount of 1). Recommended for TPM/FPKM data. Default = FALSE.
-#' @param cor_method Correlation method used to compute co-expression similarity.
-#'   One of "spearman", "pearson", or "biweight". Default = "spearman".
-#' @param min_exp Minimum expression threshold (passed to BioNERO::exp_preprocess()).
-#'   Genes with mean expression below this threshold are filtered out.
-#' @param variance_filter Logical. Whether to filter low-variance genes during preprocessing.
+#' @param geneLengths A vector of gene lengths in the order of the genes in the
+#'   dataset.Must be provided if TPM normalize is set to TRUE. Default = NULL
+#' @param logScale Logical. If TRUE, log2-transforms the data
+#'   (after adding a pseudocount of 1). Recommended for TPM/FPKM data.
 #'   Default = FALSE.
-#' @param net_type Network type for BioNERO::exp2gcn(). Options: "signed", "unsigned", or "signed hybrid".
-#'   Default = "signed hybrid".
+#' @param corMethod Correlation method used to compute co-expression
+#'   similarity. One of "spearman", "pearson", or "biweight".
+#'   Default = "spearman".
+#' @param minExp Minimum expression threshold (passed to
+#'   BioNERO::exp_preprocess()).
+#'   Genes with mean expression below this threshold are filtered out.
+#' @param varianceFilter A logical representing whether to filter low-variance
+#'   genes during preprocessing. Default = FALSE.
+#' @param netType Network type for BioNERO::exp2gcn(). Options: "signed",
+#'   "unsigned", or "signed hybrid". Default = "signed".
 #' @param seed Random seed for reproducibility. Default = 123.
 #'
 #' @return A list (BioNERO network object) containing:
 #' \itemize{
-#'   \item \code{adjacency}: adjacency matrix of gene co-expression values.
-#'   \item \code{modules}: module assignments (if available).
-#'   \item \code{SFT_fit}: scale-free topology fit statistics.
+#'   \item \code{adjacency_matrix}: adjacency matrix of gene
+#'   co-expression values.
+#'   \item \code{MEs}: Data frame of module eigengenes, with samples in rows,
+#'   and module eigengenes in columns.
+#'   \item \code{genes_and_modules}: Data frame indicating the genes and the
+#'   modules to which they belong.
+#'   \item \code{kIN}: Data frame of degree centrality for each gene.
+#'   \item \code{correlation_matrix}: Numeric matrix with pairwise correlation
+#'   coefficients between genes
+#'   \item \code{correlation_matrix}:Numeric matrix with pairwise correlation
+#'   coefficients between genes.
+#'   \item \code{params}: List with network inference parameters
+#'   passed as input.
+#'   \item \code{dendro_plot_objects}: List with objects to plot the dendrogram
 #' }
 #'
 #' @examples
 #' \dontrun{
-#' # Using GTEx brain tissue dataset available within the package
-#' dim(GTExBrainTrimmed)
-#' net <- DevelopCoexpressionNetwork(GTExBrainTrimmed,
-#'                                   cor_method = "pearson",
-#'                                   seed = 123)
+#' # Using example data from GTEx, trimmed to be lightweight and usable for
+#' # examples
+#' ?GTExBrainTrimmed
+#' net <- developCoexpressionNetwork(
+#'    dataset = GTExBrainTrimmed,
+#'    TPMNormalize = FALSE,
+#'    logScale = FALSE,
+#'    corMethod = "pearson",
+#'    minExp = 10,
+#'    varianceFilter = FALSE,
+#' )
+#'
+#' head(net$adjacency_matrix)
+#'
 #' }
+#'
+#'
+#' @references
+#' Langfelder, P., & Horvath, S. (2008). WGCNA: An R package for weighted
+#' correlation network analysis. BMC Bioinformatics, 9, 559.
+#' https://doi.org/10.1186/1471-2105-9-559
+#'
+#' Almeida-Silva, F., & Venancio, T. M. (2022). BioNERO: An all-in-one
+#' R/Bioconductor package for comprehensive and easy biological network
+#' reconstruction. Functional & Integrative Genomics, 22, 131–136.
+#' https://doi.org/10.1007/s10142-021-00821-9
+#'
+#' The GTEx Consortium. (2020). The GTEx Consortium atlas of genetic regulatory
+#' effects across human tissues. Science, 369(6509), 1318–1330.
+#' https://doi.org/10.1126/science.aaz1776
+#'
+#' Silva, A. (2022; revised 2025) TestingPackage: An Example R Package For BCB410H.
+#' Unpublished. URL https://github.com/anjalisilva/TestingPackage.
+#'
+#' Morgan, M., Obenchain, V., Hester, J., & Pagès, H. (2023).
+#' SummarizedExperiment: A container for summarized genomic data
+#' (Version 1.38.1) [R package]. Bioconductor.
+#' https://bioconductor.org/packages/SummarizedExperiment
 #'
 #' @export
 #' @import BioNERO
 #' @import SummarizedExperiment
-DevelopCoexpressionNetwork <- function(dataset,
-                                       assay_name="tpm",
-                                       TPM_normalize = FALSE,
-                                       gene_lengths = NULL,
-                                       log_scale = FALSE,
-                                       cor_method = c("spearman", "pearson", "biweight"),
-                                       min_exp = 10,
-                                       variance_filter = FALSE,
-                                       net_type = "signed",
+developCoexpressionNetwork <- function(dataset,
+                                       assayName="tpm",
+                                       TPMNormalize = FALSE,
+                                       geneLengths = NULL,
+                                       logScale = FALSE,
+                                       corMethod = c("spearman", "pearson",
+                                                     "biweight"),
+                                       minExp = 10,
+                                       varianceFilter = FALSE,
+                                       netType = "signed",
                                        seed = 123) {
   set.seed(seed)
-  cor_method <- match.arg(cor_method)
+  corMethod <- match.arg(corMethod)
 
-  # Performing checks of user input
-  if (!is.matrix(dataset) && !is.data.frame(dataset) && !(class(dataset) == "SummarizedExperiment")) {
-    stop("Input `dataset` must be a numeric matrix or data.frame of gene expression values.")
+  # --- 1. Performing checks of user input -----------------)
+  if (!is.matrix(dataset) && !is.data.frame(dataset) &&
+      !(inherits(dataset, "SummarizedExperiment"))) {
+    stop("Input `dataset` must be a numeric matrix or data.frame
+         of gene expression values.")
   }
-
-  # If it is a summarized experiment, the assay must be in the summarized experiment
-  # TODO
 
   if (is.null(rownames(dataset))) {
     stop("Input `dataset` must have rownames representing gene identifiers.")
   }
 
-  if (TPM_normalize && is.null(gene_lengths)) {
+  if (TPMNormalize && is.null(geneLengths)) {
     stop("Gene lengths must be provided if TPM_normalize is set to TRUE.")
   }
 
+  # --- 2. Processing -----------------)
   # Optional processing to TPM normalize raw counts and log scale TPM
-  if (TPM_normalize | log_scale) {
-    if (class(dataset) == "SummarizedExperiment") {
-      raw_data <- assay(dataset, assay_name)
+  if (TPMNormalize | logScale) {
+    if (inherits(dataset, "SummarizedExperiment")) {
+      rawData <- assay(dataset, assayName)
     }
     else {
-      raw_data <- as.data.frame(dataset)
+      rawData <- as.data.frame(dataset)
     }
     # Check on the expression matrix
-    if (!is.numeric(raw_data)) {
+    if (!is.numeric(rawData)) {
       stop("Expression matrix must be numeric.")
     }
-    if (TPM_normalize) {
-      rpk <- raw_data / (gene_lengths / 1000)
-      per_million <- colSums(rpk) / 1e6
-      raw_data <- sweep(rpk, 2, per_million, "/")
+    if (TPMNormalize) {
+      rpk <- rawData / (geneLengths / 1000)
+      perMillion <- colSums(rpk) / 1e6
+      rawData <- sweep(rpk, 2, perMillion, "/")
     }
 
-    if (log_scale) {
-      raw_data <- log2(raw_data + 1)
+    # Log plus 1 so that 0 is still mapped to 0 and not NA/null
+    if (logScale) {
+      rawData <- log2(rawData + 1)
     }
 
-    if (class(dataset) == "SummarizedExperiment") {
-      assays(dataset, "tpm") <- raw_data
+    if (inherits(dataset, "SummarizedExperiment")) {
+      assays(dataset, "tpm") <- rawData
     }
     else {
-      dataset <- raw_data
+      dataset <- rawData
     }
   }
 
+  # --- 3. BioNERO -----------------)
   # Run BioNERO pipeline to get the coexpression network
   # Source from the BioNERO vignette
-  final_exp <- BioNERO::exp_preprocess(dataset,
-                                       min_exp = min_exp,
-                                       variance_filter = variance_filter)
-
-  sft <- BioNERO::SFT_fit(final_exp,
-                          net_type = net_type,
-                          cor_method = cor_method)
+  finalExp <- BioNERO::exp_preprocess(dataset,
+                                       min_exp = minExp,
+                                       variance_filter = varianceFilter)
+  # Scale free fit to find the power parameter used for
+  # coexpression analysis. This provides a unique fit for the data.
+  sft <- BioNERO::SFT_fit(finalExp,
+                          net_type = netType,
+                          cor_method = corMethod)
   power <- sft$power
-
-  net <- BioNERO::exp2gcn(final_exp,
-                          net_type = net_type,
+  net <- BioNERO::exp2gcn(finalExp,
+                          net_type = netType,
                           SFTpower = power,
-                          cor_method = cor_method)
+                          cor_method = corMethod)
   return(net)
 }
 

@@ -1,93 +1,109 @@
-#' Multilayer community detection using Louvain
+#' Multilayer community detection using Louvain Algorithm
 #'
 #' @description
-#' Runs Louvain modularity optimization on a multilayer network.
-#' This function mirrors the approach of Russell et al. (2023) for tissue-specific
+#' This function runs Louvain modularity optimization on a multilayer network.
+#' It mirrors the approach of Russell et al. (2023), which used an iterated
+#' GenLouvain function from a matlab github toolkit. tissue-specific
 #' co-expression layers.
 #'
-#' @param ml A `BuildMultilayerNetworkResult` object from `BuildMultilayerNetwork()`.
+#' @param ml A `buildMultilayerNetworkResult` object
+#'    from `buildMultilayerNetwork()`.
 #' @param omega Inter-layer coupling strength (if overriding ml$params$omega).
 #' @param seed Random seed for reproducibility.
 #'
-#' @return An object of class `DetectMultilayerCommunitiesResult`:
+#' @return An object of class `detectMultilayerCommunitiesResult`:
 #' \itemize{
-#'   \item \code{state_membership} : data.frame of gene × layer to community
-#'   \item \code{gene_membership}: consensus across layers
+#'   \item \code{stateMembership} : data.frame of gene × layer to community
+#'   \item \code{geneMembership}: consensus across layers
 #'   \item \code{Q}: modularity score
 #' }
 #'
 #' @examples
 #' \dontrun{
-#' # With the multilayered network from BuildMultilayerNetwork()
-#' comm <- DetectMultilayerCommunities(ml)
+#' # Using dummy datasets to keep the example code in the functions
+#' # fast and consistent
+#' genes <- paste0("Gene", 1:10)
+#'
+#' Brain  <- matrix(rnorm(10 * 5), nrow = 10,
+#'                  dimnames = list(genes, paste0("B",1:5)))
+#' Heart  <- matrix(rnorm(10 * 5), nrow = 10,
+#'                  dimnames = list(genes, paste0("H",1:5)))
+#' Liver  <- matrix(rnorm(10 * 5), nrow = 10,
+#'                  dimnames = list(genes, paste0("L",1:5)))
+#'
+#' adjList <- list(Brain = Brain, Heart = Heart, Liver = Liver)
+#'
+#' ml <- buildMultilayerNetwork(adjList, threshold = 0.05, omega = 0.5)
+#' comm <- detectMultilayerCommunities(ml)
 #' }
 #'
 #' @export
 #' @import Matrix
 #' @import igraph
-DetectMultilayerCommunities <- function(
+detectMultilayerCommunities <- function(
     ml,
     omega = NULL,
     seed = 123
 ){
   suppressPackageStartupMessages(requireNamespace("Matrix"))
-  # Performing checks of user input
-  if (!inherits(ml, "BuildMultilayerNetworkResult")) {
-    stop("ml must be a `BuildMultilayerNetworkResult` object, see `BuildMultilayerNetwork()`")
+  # --- 1. Performs checks on input -----------------)
+  if (!inherits(ml, "buildMultilayerNetworkResult")) {
+    stop("ml must be a `buildMultilayerNetworkResult` object, see `buildMultilayerNetwork()`")
   }
 
   set.seed(seed)
 
-  # 1) Prepare multilayered adjacency matrix
+  # --- 2. Prepare multilayered adjacency matrix -----------------)
   A <- ml$supra
   Matrix::diag(A) <- 0
   g <- igraph::graph_from_adjacency_matrix(as.matrix(A),
                                            mode = "undirected",
                                            weighted = TRUE)
 
-  # 2) Run Louvain on multilayered adjacency matrix
+  # --- 3. Run louvain on adjacency matrix -----------------)
   com <- igraph::cluster_louvain(g, weights = igraph::E(g)$weight)
   mem <- igraph::membership(com)
   Q   <- igraph::modularity(com)
 
-  # 3) Map back to (gene, layer)
+  # --- 4. Map back to gene, layer -----------------)
   G <- length(ml$genes)
-  L <- length(ml$layer_names)
-  idx_list <- lapply(seq_len(L), function(li){
+  L <- length(ml$layerNames)
+  idxList <- lapply(seq_len(L), function(li){
     rng <- ml$blocks[[li]]$from:ml$blocks[[li]]$to
     data.frame(
-      state_id = rng,
+      stateId = rng,
       gene = ml$genes,
-      layer = ml$layer_names[li],
+      layer = ml$layerNames[li],
       stringsAsFactors = FALSE
     )
   })
-  state_map <- do.call(rbind, idx_list)
-  state_membership <- transform(
-    state_map,
-    community = mem[state_map$state_id]
+  stateMap <- do.call(rbind, idxList)
+  stateMembership <- transform(
+    stateMap,
+    community = mem[stateMap$stateId]
   )
 
-  # 4) Aggregate: consensus community per gene
-  tab_list <- table(state_membership$community, state_membership$gene)
-  consensus_comm <- apply(tab_list, 2, FUN=function(tb) {
+  # --- 5. Aggregate and find consensus community -----------------)
+  tabList <- table(stateMembership$community, stateMembership$gene)
+  consensusComm <- apply(tabList, 2, FUN=function(tb) {
     as.integer(names(tb)[which.max(tb)])
   })
-  p_major <- apply(tab_list, 2, function(tb) max(tb)/sum(tb))
+  pMajor <- apply(tabList, 2, function(tb) max(tb)/sum(tb))
 
-  gene_membership <- data.frame(
-    gene = names(consensus_comm),
-    consensus_comm = consensus_comm,
-    p_major = p_major,
+  geneMembership <- data.frame(
+    gene = names(consensusComm),
+    consensusComm = consensusComm,
+    pMajor = pMajor,
     stringsAsFactors = FALSE
   )
 
+  # --- 6. Return -----------------)
   out <- list(
-    state_membership = state_membership,
-    gene_membership = gene_membership,
+    stateMembership = stateMembership,
+    geneMembership = geneMembership,
     Q = Q
   )
-  class(out) <- "DetectMultilayerCommunitiesResult"
+  class(out) <- "detectMultilayerCommunitiesResult"
   return(out)
 }
 

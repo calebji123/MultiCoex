@@ -19,21 +19,57 @@
 #'   include in the plot, excluding the seed gene. Default = 10.
 #' @param k An integer representing maximum distance by which a gene is defined
 #'   as the `seedGene`'s neighbour. Default = 1 (direct neighbors).
+#' @param legendPosition A character vector describing the position of the
+#'   legend in the figure. This is for custom positioning when the graph extends
+#'   into the legend. One of "topleft", "topright", "bottomleft", "bottomright".
+#'   Defailt = "topleft"
+#' @param seed Random seed for reproducibility. Default = 123.
 #'
 #' @return Invisibly returns the igraph object used for plotting.
 #'
+#' @examples
+#' \dontrun{
+#' # Using dummy datasets to keep the example code in the functions
+#' # fast and consistent
+#' genes <- paste0("Gene", 1:10)
+#'
+#' Brain  <- matrix(rnorm(10 * 5), nrow = 10,
+#'                  dimnames = list(genes, paste0("B",1:5)))
+#' Heart  <- matrix(rnorm(10 * 5), nrow = 10,
+#'                  dimnames = list(genes, paste0("H",1:5)))
+#' Liver  <- matrix(rnorm(10 * 5), nrow = 10,
+#'                  dimnames = list(genes, paste0("L",1:5)))
+#'
+#' adjList <- list(Brain = Brain, Heart = Heart, Liver = Liver)
+#'
+#' ml <- buildMultilayerNetwork(adjList, threshold = 0.05, omega = 0.5)
+#' comm <- detectMultilayerCommunities(ml)
+#' plotCoexpressionNetworks(ml, "Gene4",
+#'    maxGenes = 5)
+#' }
+#'
+#'
+#'
 #' @export
 #' @import igraph
+#' @import grDevices
+#' @importFrom graphics legend par
+#' @importFrom stats setNames
 plotCoexpressionNetworks <- function(ml,
                                   seedGene,
                                   maxGenes = 10,
                                   k = 1,
+                                  legendPosition = c("topleft", "topright",
+                                                     "bottomleft",
+                                                     "bottomright"),
                                   seed = 123) {
   set.seed(seed)
-  # Basic checks
-  if (!inherits(ml, "BuildMultilayerNetworkResult")) {
-    stop("ml must be a `BuildMultilayerNetworkResult` object, see
-         `BuildMultilayerNetwork()`")
+  legendPosition <- match.arg(legendPosition)
+
+  # --- 1. Performs checks in inputs -----------------)
+  if (!inherits(ml, "buildMultilayerNetworkResult")) {
+    stop("ml must be a `buildMultilayerNetworkResult` object, see
+         `buildMultilayerNetwork()`")
   }
   if (!is.numeric(maxGenes)) {
     stop("`maxGenes` should be a numeric value that represents the maximum
@@ -52,14 +88,14 @@ plotCoexpressionNetworks <- function(ml,
   }
 
   genesAll <- ml$genes
-  layersAll <- ml$layer_names
-  layerAdj <- ml$layer_adj
+  layersAll <- ml$layerNames
+  layerAdj <- ml$layerAdj
 
   if (!seedGene %in% genesAll) {
     stop("Seed gene '", seedGene, "' not found in ml$genes.")
   }
 
-  # 1. Collect all the edges and build a union graph (forgetting about layers)
+  # --- 2. Collect all edges to form a union graph -----------------)
 
   # Union edges: ignore layer here, just need connectivity for neighborhood
   # Use the helper adjToEdges
@@ -75,7 +111,7 @@ plotCoexpressionNetworks <- function(ml,
     vertices = data.frame(name = genesAll, stringsAsFactors = FALSE)
   )
 
-  # 2. Get neighborhood around seed gene
+  # --- 2. Get neighborhood around seed gene -----------------)
   if (!seedGene %in% igraph::V(gUnion)$name) {
     stop("Seed gene '", seedGene, "' has no edges in the union of all layers")
   }
@@ -102,7 +138,8 @@ plotCoexpressionNetworks <- function(ml,
          try another seed gene")
   }
 
-  # 3. Collect edges from each layer restricted to these genes
+  # --- 3. Collect edges from each layer -----------------)
+  # Restricted to the neighbourhood genes
   layerEdges <- lapply(layersAll, function(ly) {
     A <- as.matrix(layerAdj[[ly]])
     rownames(A) <- colnames(A) <- genesAll
@@ -130,7 +167,7 @@ plotCoexpressionNetworks <- function(ml,
     return(invisible(NULL))
   }
 
-  # 4. Build multilayer edge-colored graph
+  # --- 4. Build multilayer graph plot -----------------)
   g <- igraph::graph_from_data_frame(
     d = edgesAll,
     directed = FALSE,
@@ -150,9 +187,32 @@ plotCoexpressionNetworks <- function(ml,
     igraph::E(g)$width <- 1
   }
 
+
+  # Change the curvature based on how many edges are between two nodes
+  el <- as.data.frame(igraph::as_edgelist(g, names = TRUE))
+  colnames(el) <- c("from", "to")
+  pairId <- paste(pmin(el$from, el$to), pmax(el$from, el$to), sep = "||")
+
+  # Initialize curvature vector of correct length
+  curvVals <- numeric(igraph::ecount(g))
+
+  # For each pair, if there are multiple edges, give them different curvature
+  offset <- 0.2  # how "curvy" parallel edges are
+  for (pid in unique(pairId)) {
+    idx <- which(pairId == pid)
+    n   <- length(idx)
+    if (n == 1L) {
+      curvVals[idx] <- 0.2          # normal edge
+    } else {
+      curvVals[idx] <- seq(-offset, offset, length.out = n)
+    }
+  }
+
+  igraph::E(g)$curved <- curvVals
+
   # Highlight seed gene
-  vcol <- ifelse(igraph::V(g)$name == seed_gene, "gold", "white")
-  vframe <- ifelse(igraph::V(g)$name == seed_gene, "black", "grey40")
+  vcol <- ifelse(igraph::V(g)$name == seedGene, "gold", "white")
+  vframe <- ifelse(igraph::V(g)$name == seedGene, "black", "grey40")
 
   layout <- igraph::layout_with_fr(g)
 
@@ -160,6 +220,7 @@ plotCoexpressionNetworks <- function(ml,
   on.exit(par(oldPar), add = TRUE)
   par(mar = c(2, 2, 2, 2))
 
+  # --- 5. Plot the graph -----------------)
   plot(
     g,
     layout = layout,
@@ -170,11 +231,10 @@ plotCoexpressionNetworks <- function(ml,
     vertex.label.color = "black",
     vertex.color = vcol,
     vertex.frame.color = vframe,
-    edge.curved = 0.2,
     main = paste0("Local multilayer neighborhood of ", seedGene)
   )
 
-  legend("topleft",
+  legend(legendPosition,
          legend = layNames,
          col = cols[layNames],
          lwd = 2,
@@ -184,7 +244,9 @@ plotCoexpressionNetworks <- function(ml,
   invisible(g)
 }
 
-# Helper: adjacency -> edge list (upper triangle only)
+# Helper function: taking in an adjacency matrix `A`
+# and a list `nodes`, return a list of edges and weights
+# By parsing through the upper triangle
 adjToEdges <- function(A, nodes) {
   A <- as.matrix(A)
   rownames(A) <- colnames(A) <- nodes
@@ -194,12 +256,12 @@ adjToEdges <- function(A, nodes) {
     return(data.frame(from = character(), to = character(), weight = numeric()))
   }
   rc <- arrayInd(idx, .dim = dim(A))
-  data.frame(
+  return(data.frame(
     from = nodes[rc[, 1]],
     to   = nodes[rc[, 2]],
     weight = A[idx],
     stringsAsFactors = FALSE
-  )
+  ))
 }
 
 

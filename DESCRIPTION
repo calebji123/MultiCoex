@@ -1,6 +1,6 @@
 Package: MultiCoex
 Type: Package
-Title: Multilayered network analysis of differential coexpression
+Title: Multilayered approach to analyzing differential coexpression
 Version: 0.1.0
 Authors@R: c(
     person(
@@ -11,7 +11,7 @@ Authors@R: c(
   )
 Description: Finding gene communities in differential coexpression (difference in
     coexpression networks across conditions) using multilayered networks with 
-    integration with coexpression pipelines and visualization methods
+    integration with coexpression pipelines and visualization methods.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -20,7 +20,6 @@ RoxygenNote: 7.3.3
 Suggests: 
     knitr,
     rmarkdown,
-    SummaryExperiment,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
@@ -29,5 +28,8 @@ Depends:
 Imports: 
     BioNERO,
     igraph,
-    Matrix
+    Matrix,
+    shiny,
+    shinyalert,
+    SummarizedExperiment
 biocViews:
