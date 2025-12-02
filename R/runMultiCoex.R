@@ -27,7 +27,7 @@
 #' @importFrom shiny runApp
 #' @import shinyalert
 
-runTestingPackage <- function() {
+runMultiCoex <- function() {
   appDir <- system.file("shiny-scripts",
                         package = "MultiCoex")
   actionShiny <- shiny::runApp(appDir, display.mode = "normal")
