@@ -144,6 +144,9 @@ way.
   SummarizedExperiment: A container for matrix-like assays (Version
   1.38.1). <https://doi.org/10.18129/B9.bioc.SummarizedExperiment>
   <https://bioconductor.org/packages/SummarizedExperiment>
+- R Core Team (2025). R: A Language and Environment for Statistical
+  Computing. R Foundation for Statistical Computing, Vienna, Austria.
+  <https://www.R-project.org/>
 
 ## Acknowledgements
 

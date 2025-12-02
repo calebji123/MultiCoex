@@ -387,7 +387,7 @@ server <- function(input, output, session) {
   ## ---- 6. Catch alerts ---------------------------------------)
   observeEvent(input$datasets, {
     # Show a modal when the button is pressed
-    shinyalert(title = "Example Datasets from GTEx",
+    shinyalert::shinyalert(title = "Example Datasets from GTEx",
                text = "Expression datasets from the brain, heart, and liver taken from GTEx, a comprehensive human RNA-seq dataset.
                This data has been trimmed for a smaller size.
 
@@ -396,7 +396,7 @@ server <- function(input, output, session) {
   })
   observeEvent(input$coexParameter, {
     # Show a modal when the button is pressed
-    shinyalert(title = "Run coexpression parameters",
+    shinyalert::shinyalert(title = "Run coexpression parameters",
                text = "Parameters used to create coexpression data information:
 
                Uploaded data must be TPM and log normalized data, with up to three layers each requiring a separate file. These files are gene expression files with genes as the rows and samples as the columns. These will be inputted as .csv.
@@ -413,7 +413,7 @@ server <- function(input, output, session) {
   })
   observeEvent(input$multilayerParameter, {
     # Show a modal when the button is pressed
-    shinyalert(title = "Run multilayer, communities, and exploration parameters",
+    shinyalert::shinyalert(title = "Run multilayer, communities, and exploration parameters",
                text = "Parameters used to create multilayer network, find gene communities, and explore graph:
 
                Inter-layer coupling (omega) is the strength of the edge between layers. This is usually calcualted based on the average edge weight of the network, but to get a naive sense of the algorithm you can use a value close to the size of the weights between genes as seen in the adjacency matrix.

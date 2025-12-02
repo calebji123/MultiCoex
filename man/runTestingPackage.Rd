@@ -22,7 +22,13 @@ MultiCoex::runMultiCoex()
 
 }
 \references{
-Grolemund, G. (2015). Learn Shiny - Video Tutorials. \href{https://shiny.rstudio.com/tutorial/}{Link}
+Grolemund, G. (2015). Learn Shiny - Video Tutorials.
+\href{https://shiny.rstudio.com/tutorial/}{Link}
+
 Silva, A. (2022; revised 2025) TestingPackage: An Example R Package For BCB410H.
 Unpublished. URL https://github.com/anjalisilva/TestingPackage.
+
+Chang, W., Cheng, J., Allaire, J. J., Sievert, C., Schloerke, B., Xie, Y.,
+Allen, J., McPherson, J., Dipert, A., & Borges, B. (2024). Shiny:
+Web application framework for R (Version 1.8.0). https://shiny.rstudio.com/
 }
