@@ -12,7 +12,7 @@ issues](https://img.shields.io/github/issues/calebji123/MultiCoex)](https://gith
 ![GitHub language
 count](https://img.shields.io/github/languages/count/calebji123/MultiCoex)
 ![GitHub commit activity
-(branch)](https://img.shields.io/github/commit-activity/y/calebji123/MultiCoex/master)
+(branch)](https://img.shields.io/github/commit-activity/y/calebji123/MultiCoex/main)
 <!-- badges: end --> Multilayered approach to analyzing differential
 coexpression
 
@@ -60,34 +60,44 @@ data(package = "MultiCoex")
 browseVignettes("MultiCoex")
 ```
 
-`MultiCoex` contains five major functions: 1.
-**developCoexpressionNetwork** for checking your data and concisely
-running the `BioNERO`pipeline to create a coexpression adjacency matrix.
-2. **buildMultilayerNetwork** for building a multilayered network from
-multiple coexpression adjacency matrices to be used in subsequent steps,
-stored in a supra-adjacency matrix. 3. **detectMultilayerCommunities**
-for analyzing the multilayered network and using the Louvain algorithm
-to create communities throughout the network. 4.
-**plotCoexpressionNetwork** for plotting genes in a neighborhood around
-a seed gene in a multilayered graph, with colored edges representing
-layers. 5. **runMultiCoex** for creating the shiny interface, which is
-an interactive web application that can upload data and interactively
-run the functions provided in the `MultiCoex` package.
+`MultiCoex` contains five major functions:
+
+1.  **developCoexpressionNetwork** for checking your data and concisely
+    running the `BioNERO`pipeline to create a coexpression adjacency
+    matrix.
+
+2.  **buildMultilayerNetwork** for building a multilayered network from
+    multiple coexpression adjacency matrices to be used in subsequent
+    steps, stored in a supra-adjacency matrix.
+
+3.  **detectMultilayerCommunities** for analyzing the multilayered
+    network and using the Louvain algorithm to create communities
+    throughout the network.
+
+4.  **plotCoexpressionNetwork** for plotting genes in a neighborhood
+    around a seed gene in a multilayered graph, with colored edges
+    representing layers.
+
+5.  **runMultiCoex** for creating the shiny interface, which is an
+    interactive web application that can upload data and interactively
+    run the functions provided in the `MultiCoex` package.
 
 ![](./inst/extdata/MultiCoex_summary_figure.png)
 
 ## Contributions
 
 The author of this package is Caleb Ji. The author wrote the
-**DevelopCoexpressionNetwork** function, which checks the validity of
+**developCoexpressionNetwork** function, which checks the validity of
 the data, optionally processes it from raw counts to TPM and log TPM,
 and runs the BioNERO R package coexpression pipeline. The author wrote
-the **BuildMultilayerNetwork** to construct the sparse coexpression
+the **buildMultilayerNetwork** to construct the sparse coexpression
 network and combine layers into one matrix, inspired by Russell et
 al. (2023)’s method of creating multilayered networks. The
-**DetectMultilayerCommunities** function uses code with inspiration from
+**detectMultilayerCommunities** function uses code with inspiration from
 Russell et al. (2023)’s python scripts to find communities in the
-multilayer networks.
+multilayer networks. The author wrote the **plotCoexpressionNetworks**
+function to plot and view gene neiborhoods in an easy and interpretable
+way.
 
 ## References
 
@@ -112,17 +122,27 @@ multilayer networks.
   2025, from <https://app.biorender.com/>
 - Chang, W., Cheng, J., Allaire, J. J., Sievert, C., Schloerke, B., Xie,
   Y., Allen, J., McPherson, J., Dipert, A., & Borges, B. (2024). Shiny:
-  Web application framework for R (Version 1.8.0) \[Computer software\].
-  RStudio, PBC. <https://shiny.rstudio.com/>
-- Csardi, G., & Nepusz, T. (2006). igraph: Network analysis and
-  visualization (Version 2.2.1) \[Computer software\].
-  <https://igraph.org/>
-- Bates, D., & Maechler, M. (2024). Matrix: Sparse and dense matrix
-  classes and methods (Version 1.7.4) \[Computer software\].
-  <https://cran.r-project.org/package=Matrix>
-- Morgan, M., Obenchain, V., Hester, J., & Pagès, H. (2023).
-  SummarizedExperiment: A container for summarized genomic data (Version
-  1.38.1) \[R package\]. Bioconductor.
+  Web application framework for R (Version 1.8.0).
+  <https://shiny.rstudio.com/>
+- Csárdi, G., & Nepusz, T. (2006). The igraph software package for
+  complex network research. InterJournal, Complex Systems, 1695.
+  <https://igraph.org>
+- Antonov, M., Csárdi, G., Horvát, S., Müller, K., Nepusz, T., Noom, D.,
+  Salmon, M., Traag, V., Welles, B. F., & Zanini, F. (2023). igraph
+  enables fast and robust network analysis across programming languages.
+  arXiv:2311.10260. <https://doi.org/10.48550/arXiv.2311.10260>
+- Csárdi, G., Nepusz, T., Traag, V., Horvát, S., Zanini, F., Noom, D.,
+  Müller, K., Schoch, D., & Salmon, M. (2025). igraph: Network analysis
+  and visualization in R (Version 2.2.1).
+  <https://doi.org/10.5281/zenodo.7682609>
+  <https://CRAN.R-project.org/package=igraph>
+- Bates, D., Maechler, M., & Jagan, M. (2025). Matrix: Sparse and dense
+  matrix classes and methods (Version 1.7-4).
+  <https://doi.org/10.32614/CRAN.package.Matrix>
+  <https://CRAN.R-project.org/package=Matrix>
+- Morgan, M., Obenchain, V., Hester, J., & Pagès, H. (2025).
+  SummarizedExperiment: A container for matrix-like assays (Version
+  1.38.1). <https://doi.org/10.18129/B9.bioc.SummarizedExperiment>
   <https://bioconductor.org/packages/SummarizedExperiment>
 
 ## Acknowledgements

@@ -19,6 +19,9 @@ ui <- fluidPage(
         selected = "example"
       ),
 
+      actionButton(inputId = "datasets",
+                   label = "Example dataset details"),
+
       conditionalPanel(
         "input.dataSource == 'upload'",
         h5("Layer 1"),
@@ -63,6 +66,9 @@ ui <- fluidPage(
         selected = "signed"
       ),
 
+      actionButton(inputId = "coexParameter",
+                   label = "Information on coexpression parameters"),
+
       hr(),
       tags$p("This may take a while"),
       actionButton("runCoex", "Run coexpression network construction"),
@@ -85,7 +91,10 @@ ui <- fluidPage(
       h4("Exploration options"),
       uiOutput("seedGeneUi"),
       numericInput("maxGenes", "Max genes around seed:", 10, min = 3, max = 50),
-      numericInput("k", "Graph radius (k hops):", 1, min = 1, max = 3)
+      numericInput("k", "Graph radius (k hops):", 1, min = 1, max = 3),
+
+      actionButton(inputId = "multilayerParameter",
+                   label = "Information on multilayer and exploration parameters"),
     ),
 
     mainPanel(
@@ -110,28 +119,47 @@ ui <- fluidPage(
                         Look through the tabs to see explore the data and see
                         the results."),
                  br(),
-                 br(),
                  tags$p("Step 1: Upload data or choose example data provided.
                          Select the parameters that
                         will be used for developing coexpression adjacency
-                        matrices")),
+                        matrices. Then click the button `Run coexpression
+                        network construction`. This process may take a while.
+                        Explore the `Coexpression` tab to see a summary of the
+                        output when it is done running and explore the relevant
+                        table."),
+                 br(),
+                 tags$p("Step 2: Enter parameters on the left for the multilayer
+                        and communities section and click the
+                        `Build multilayer & detect communities`
+                        button. Then explore the summary and communities in
+                        their respective tabs."),
+                 br(),
+                 tags$p("Step 3: Explore individual gene plots through the
+                        exploration options section on the bottom left.
+                        Input a gene of interest and the max genes around
+                        the seed gene you wish to inspect."),
+                 ),
         tabPanel("Data",
                  h3("Expression layers"),
                  tableOutput("exprSummary")),
         tabPanel("Coexpression",
                  h3("Coexpression network summary"),
-                 tableOutput("coexSummary")),
-        tabPanel("Multilayer & Communities",
+                 tableOutput("coexSummary"),
+                 selectInput(
+                   "inspectLayer",
+                   "Layer to inspect (this will only show the top 5 rows):",
+                   choices = NULL   # we'll fill this from server
+                 ),
+                 DT::dataTableOutput("adjHead")),
+        tabPanel("Multilayer & communities",
                  h3("Multilayer summary"),
-                 verbatimTextOutput("mlSummary")),
-        tabPanel("Explore seed gene",
-                 plotOutput("localPlot", height = "600px"),
-                 h4("Genes in selected seed neighborhood"),
-                 tableOutput("neighTable")),
-        tabPanel("Communities",
+                 verbatimTextOutput("mlSummary"),
+                 h3("Communities"),
                  uiOutput("communityLayerUi"),
                  uiOutput("communityIdUi"),
-                 tableOutput("communityTable"))
+                 tableOutput("communityTable")),
+        tabPanel("Explore seed gene",
+                 plotOutput("localPlot", height = "600px"))
       )
     )
   )
@@ -139,7 +167,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
 
-  # 1. Expression data (Upload or select example)
+  ## ---- 1. Expression data (upload or example) ------------------------)
   exprData <- reactive({
     if (input$dataSource == "example") {
       # Provided by the package MultiCoex
@@ -156,12 +184,12 @@ server <- function(input, output, session) {
       layers <- list()
 
       # helper to add one layer if both name + file are present
-      add_layer <- function(file_input, layer_name) {
-        if (is.null(file_input) || layer_name == "") return(NULL)
+      addLayer <- function(fileInput, layerName) {
+        if (is.null(fileInput) || layerName == "") return(NULL)
 
         # read CSV; assume first column = gene IDs (rownames)
         m <- read.csv(
-          file_input$datapath,
+          fileInput$datapath,
           row.names = 1,
           check.names = FALSE
         )
@@ -169,17 +197,17 @@ server <- function(input, output, session) {
         m <- as.matrix(m)
 
         if (is.null(rownames(m))) {
-          stop("Expression matrix for layer '", layer_name,
+          stop("Expression matrix for layer '", layerName,
                "' must have gene IDs in the first column (used as rownames).")
         }
 
-        layers[[layer_name]] <<- m
+        layers[[layerName]] <<- m
       }
 
       # fill from your UI inputs (adjust IDs to match your app)
-      add_layer(input$layer1File, input$layer1Name)
-      add_layer(input$layer2File, input$layer2Name)
-      add_layer(input$layer3File, input$layer3Name)
+      addLayer(input$layer1File, input$layer1Name)
+      addLayer(input$layer2File, input$layer2Name)
+      addLayer(input$layer3File, input$layer3Name)
 
       if (length(layers) == 0L) {
         validate("Please upload at least one CSV expression matrix.")
@@ -196,13 +224,25 @@ server <- function(input, output, session) {
     req(ed)
     data.frame(
       layer = names(ed),
-      n_genes = vapply(ed, nrow, integer(1)),
-      n_samples = vapply(ed, ncol, integer(1))
+      Ngenes = vapply(ed, nrow, integer(1)),
+      Nsamples = vapply(ed, ncol, integer(1))
     )
   })
 
-  # 2. Coexpression networks
-  coex_nets <- eventReactive(input$runCoex, {
+  # Update the selections for later data inspection
+  observe({
+    ed <- exprData()
+    req(ed)
+    updateSelectInput(
+      session,
+      "inspectLayer",
+      choices = names(ed),
+      selected = names(ed)[1]
+    )
+  })
+
+  ## ---- 2. Coexpression networks ------------------------)
+  coexNets <- eventReactive(input$runCoex, {
     ed <- exprData()
     req(ed)
 
@@ -211,12 +251,12 @@ server <- function(input, output, session) {
       message("Building coexpression for layer: ", ly)
       MultiCoex::developCoexpressionNetwork(
         dataset = ed[[ly]],
-        TPM_normalize = FALSE,
-        log_scale = FALSE,
-        cor_method = input$cor_method,
-        min_exp = input$min_exp,
-        variance_filter = input$variance_filter,
-        net_type = input$net_type
+        TPMNormalize = FALSE,
+        logScale = FALSE,
+        corMethod = input$corMethod,
+        minExp = input$minExp,
+        varianceFilter = input$varianceFilter,
+        netType = input$netType
       )
     })
     names(nets) <- names(ed)
@@ -229,6 +269,7 @@ server <- function(input, output, session) {
     )
   })
 
+  # Render a small summary of the coexpression data for each layer
   output$coexSummary <- renderTable({
     cn <- coexNets()
     req(cn)
@@ -240,146 +281,156 @@ server <- function(input, output, session) {
     )
   })
 
-  ## ---- 3. Build multilayer & communities (reactive) --------------------
-  ml_obj <- eventReactive(input$run_multilayer, {
-    cn <- coex_nets()
+  # Render the head of the adjacency table for the layer selected
+  output$adjHead <- DT::renderDataTable({
+    cn <- coexNets()
+    req(cn, input$inspectLayer)
+    adj <- cn$adjList[[input$inspectLayer]]
+    DT::datatable(
+      head(as.data.frame(adj)),
+      options = list(pageLength = 5, scrollX = TRUE)
+    )
+  })
+
+  ## ---- 3. Build multilayer & communities (reactive) -------------------)
+  mlObj <- eventReactive(input$runMultilayer, {
+    cn <- coexNets()
     req(cn)
 
     # Find common genes across layers
-    adj_list <- cn$adj_list
-    common_genes <- Reduce(intersect, lapply(adj_list, rownames))
+    adjList <- cn$adjList
+    commonGenes <- Reduce(intersect, lapply(adjList, rownames))
 
     # Build multilayer object (your function)
-    MultiCoex::buildMultilayerNetwork(adj_list,
-                                      genes = common_genes,
+    MultiCoex::buildMultilayerNetwork(adjList,
+                                      genes = commonGenes,
                                       omega = input$omega,
                                       threshold = input$threshold,
-                                      match_genes = TRUE)
+                                      matchGenes = TRUE)
   })
 
-  comm_res <- eventReactive(input$run_multilayer, {
-    ml <- ml_obj()
+  commRes <- eventReactive(input$runMultilayer, {
+    ml <- mlObj()
     req(ml)
     MultiCoex::detectMultilayerCommunities(ml)
   })
 
-  output$ml_summary <- renderPrint({
-    ml <- ml_obj()
-    cr <- comm_res()
+  output$mlSummary <- renderPrint({
+    ml <- mlObj()
+    cr <- commRes()
     req(ml, cr)
 
-    cat("Layers:", paste(ml$layer_names, collapse = ", "), "\n")
+    cat("Layers:", paste(ml$layerNames, collapse = ", "), "\n")
     cat("Genes:", length(ml$genes), "\n")
-    cat("Communities:", length(unique(cr$state_membership$community)), "\n")
+    cat("Communities:", length(unique(cr$stateMembership$community)), "\n")
   })
 
-  output$pmajor_hist <- renderPlot({
-    cr <- comm_res()
-    req(cr)
-    gm <- cr$gene_membership
-    hist(gm$p_major,
-         breaks = 20,
-         main = "Distribution of p_major",
-         xlab = "p_major (community stability)",
-         col = "steelblue")
-  })
-
-  ## ---- 4. Seed gene UI + local multilayer plot -------------------------
-  output$seed_gene_ui <- renderUI({
-    ml <- ml_obj()
+  ## ---- 4. Seed gene UI + local multilayer plot ------------------------)
+  output$seedGeneUi <- renderUI({
+    ml <- mlObj()
     req(ml)
     selectInput(
-      "seed_gene",
+      "seedGene",
       "Seed gene:",
       choices = sort(ml$genes),
       selected = ml$genes[1]
     )
   })
 
-  output$local_plot <- renderPlot({
-    ml <- ml_obj()
-    req(ml, input$seed_gene)
+  output$localPlot <- renderPlot({
+    ml <- mlObj()
+    req(ml, input$seedGene)
     MultiCoex::plotCoexpressionNetworks(
       ml,
-      seedGene = input$seed_gene,
-      maxGenes = input$max_genes,
-      k = input$k_hops
+      seedGene = input$seedGene,
+      maxGenes = input$maxGenes,
+      k = input$k
     )
   })
 
-  output$neigh_table <- renderTable({
-    # You can adapt plot_local_multilayer to return the vertex set,
-    # or reconstruct neighborhood here from ml and seed.
-    ml <- ml_obj()
-    req(ml, input$seed_gene)
 
-    # Simplest: union graph, k-hop neighborhood
-    genes_all <- ml$genes
-    layer_adj <- ml$layer_adj
-    # quick helper to compute union graph
-    adj_to_edges <- function(A, nodes) {
-      A <- as.matrix(A)
-      rownames(A) <- colnames(A) <- nodes
-      ut <- upper.tri(A, diag = FALSE)
-      idx <- which(ut & (abs(A) > 0))
-      if (!length(idx)) return(data.frame(from=character(), to=character()))
-      rc <- arrayInd(idx, .dim = dim(A))
-      data.frame(
-        from = nodes[rc[,1]],
-        to   = nodes[rc[,2]],
-        stringsAsFactors = FALSE
-      )
-    }
-    union_edges <- do.call(
-      rbind,
-      lapply(layer_adj, function(A) adj_to_edges(A, genes_all))
-    )
-    union_edges <- unique(union_edges)
-    g_union <- igraph::graph_from_data_frame(union_edges, directed = FALSE,
-                                             vertices = data.frame(name = genes_all))
-
-    if (!input$seed_gene %in% igraph::V(g_union)$name) return(NULL)
-    ego_nodes <- igraph::ego(g_union, order = input$k_hops,
-                             nodes = input$seed_gene, mode = "all")[[1]]
-    neigh_genes <- igraph::V(g_union)$name[ego_nodes]
-
-    head(data.frame(gene = neigh_genes), n = input$max_genes)
-  })
-
-  ## ---- 5. Community-level table ----------------------------------------
-  output$community_layer_ui <- renderUI({
-    ml <- ml_obj()
+  ## ---- 5. Community-level table ---------------------------------------)
+  output$communityLayerUi <- renderUI({
+    ml <- mlObj()
     req(ml)
     selectInput(
-      "community_layer",
+      "communityLayer",
       "Layer:",
-      choices = ml$layer_names,
-      selected = ml$layer_names[1]
+      choices = ml$layerNames,
+      selected = ml$layerNames[1]
     )
   })
 
-  output$community_id_ui <- renderUI({
-    cr <- comm_res()
-    req(cr, input$community_layer)
-    sm <- cr$state_membership
-    ly <- subset(sm, layer == input$community_layer)
-    comm_ids <- sort(unique(ly$community))
+  output$communityIdUi <- renderUI({
+    cr <- commRes()
+    req(cr, input$communityLayer)
+    sm <- cr$stateMembership
+    ly <- subset(sm, layer == input$communityLayer)
+    commIds <- sort(unique(ly$community))
     selectInput(
-      "community_id",
+      "communityId",
       "Community ID:",
-      choices = comm_ids,
-      selected = comm_ids[1]
+      choices = commIds,
+      selected = commIds[1]
     )
   })
 
-  output$community_table <- renderTable({
-    cr <- comm_res()
-    req(cr, input$community_layer, input$community_id)
-    sm <- cr$state_membership
+  output$communityTable <- renderTable({
+    cr <- commRes()
+    req(cr, input$communityLayer, input$communityId)
+    sm <- cr$stateMembership
     subset(sm,
-           layer == input$community_layer &
-             community == input$community_id)[, c("gene","layer","community")]
+           layer == input$communityLayer &
+             community == input$communityId)[, c("gene","layer","community")]
   })
+
+  ## ---- 6. Catch alerts ---------------------------------------)
+  observeEvent(input$datasets, {
+    # Show a modal when the button is pressed
+    shinyalert(title = "Example Datasets from GTEx",
+               text = "Expression datasets from the brain, heart, and liver taken from GTEx, a comprehensive human RNA-seq dataset.
+               This data has been trimmed for a smaller size.
+
+               Citation: The GTEx Consortium. (2020). The GTEx Consortium atlas of genetic regulatory effects across human tissues. Science, 369(6509), 1318–1330. https://doi.org/10.1126/science.aaz1776 ",
+               type = "info")
+  })
+  observeEvent(input$coexParameter, {
+    # Show a modal when the button is pressed
+    shinyalert(title = "Run coexpression parameters",
+               text = "Parameters used to create coexpression data information:
+
+               Uploaded data must be TPM and log normalized data, with up to three layers each requiring a separate file.
+
+               Correlation method describes the statistical test used to correlate gene expression. Use the default (pearson) for the fastest test on the example data.
+
+               Minimum expression describes how much expression (in TPM) is required to retain that gene in the analysis.
+
+               Filter low variance genes is a parameter that removes genes without much variance between samples. Keep this off for the example data because the trimmed data means there is not much variance retained.
+
+               Network type is for how the gene-gene adjacency values are represented in the resulting output. Default is signed.
+               ",
+               type = "info")
+  })
+  observeEvent(input$multilayerParameter, {
+    # Show a modal when the button is pressed
+    shinyalert(title = "Run multilayer, communities, and exploration parameters",
+               text = "Parameters used to create multilayer network, find gene communities, and explore graph:
+
+               Inter-layer coupling (omega) is the strength of the edge between layers. This is usually calcualted based on the average edge weight of the network, but to get a naive sense of the algorithm you can use a value close to the size of the weights between genes as seen in the adjacency matrix.
+
+               Coexpression signficiance threshold filtering is how many genes are filtered out to create the coexpression graph, a number from 0 - 1.
+
+               Seed gene is the gene to start the plot analysis. This must be selected from available genes kept in analysis.
+
+               Max genes around seed is a number showing the amount of genes that will be displayed along with the seed gene.
+
+               Graph radius (k hops) is a number representing how far away the neighbor genes will be pulled to satisfy the max genes.
+               ",
+               type = "info")
+  })
+
+
+
 }
 
 shinyApp(ui = ui, server = server)

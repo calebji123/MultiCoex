@@ -116,8 +116,8 @@ https://doi.org/10.1126/science.aaz1776
 Silva, A. (2022; revised 2025) TestingPackage: An Example R Package For BCB410H.
 Unpublished. URL https://github.com/anjalisilva/TestingPackage.
 
-Morgan, M., Obenchain, V., Hester, J., & Pagès, H. (2023).
-SummarizedExperiment: A container for summarized genomic data
-(Version 1.38.1) [R package]. Bioconductor.
+Morgan, M., Obenchain, V., Hester, J., & Pagès, H. (2025).
+SummarizedExperiment: A container for matrix-like assays (Version 1.38.1).
+https://doi.org/10.18129/B9.bioc.SummarizedExperiment
 https://bioconductor.org/packages/SummarizedExperiment
 }

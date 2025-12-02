@@ -9,7 +9,7 @@
 #' @param layers A **named** list. Each element is:
 #'   a numeric gene x gene adjacency matrix (symmetric)
 #'   All layers must have the **same genes and order** (or provide `genes` and
-#'   set `match_genes = TRUE`).
+#'   set `matchGenes = TRUE`).
 #' @param threshold How to sparsify layer adjacencies:
 #'   - numeric in (0,1): keep top n% of edges per layer
 #'   - "none": keep weights as-is (dense: not recommended for space).
@@ -32,21 +32,57 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Using dummy datasets to keep the example code in the functions
-#' # fast and consistent
-#' genes <- paste0("Gene", 1:10)
+#' # Using example data from GTEx, trimmed to be lightweight and usable for
+#' # examples
+#' ?GTExBrainTrimmed
+#' ?GTExHeartTrimmed
+#' ?GTExLiverTrimmed
+#' # Get the coexpression data for each dataset
+#' brainNet <- developCoexpressionNetwork(
+#'                SummarizedExperiment::assay(GTExBrainTrimmed, "tpm"),
+#'                corMethod = "pearson")
+#' heartNet <- developCoexpressionNetwork(
+#'                SummarizedExperiment::assay(GTExHeartTrimmed, "tpm"),
+#'                corMethod = "pearson")
+#' liverNet <- developCoexpressionNetwork(
+#'                SummarizedExperiment::assay(GTExLiverTrimmed, "tpm"),
+#'                corMethod = "pearson")
 #'
-#' Brain  <- matrix(rnorm(10 * 5), nrow = 10,
-#'                  dimnames = list(genes, paste0("B",1:5)))
-#' Heart  <- matrix(rnorm(10 * 5), nrow = 10,
-#'                  dimnames = list(genes, paste0("H",1:5)))
-#' Liver  <- matrix(rnorm(10 * 5), nrow = 10,
-#'                  dimnames = list(genes, paste0("L",1:5)))
+#' # Combine them together to prepare them for the multilayer network
+#' layers <- list(Brain = brainNet$adjacency_matrix,
+#'                Heart = heartNet$adjacency_matrix,
+#'                Liver = liverNet$adjacency_matrix)
+#' # Find the common genes
+#' commonGenes <- Reduce(intersect, list(
+#'                       rownames(brainNet$adjacency_matrix),
+#'                       rownames(heartNet$adjacency_matrix),
+#'                       rownames(liverNet$adjacency_matrix)
+#'                      ))
+#' #Building the multilayered network
+#' multilayeredNetwork <- buildMultilayerNetwork(layers,
+#'                                               genes = commonGenes,
+#'                                               matchGenes = TRUE,
+#'                                               omega = 0.5,
+#'                                               threshold = 0.05)
+#' head(multilayered$supra)
 #'
-#' adjList <- list(Brain = Brain, Heart = Heart, Liver = Liver)
-#'
-#' ml <- buildMultilayerNetwork(adjList, threshold = 0.05, omega = 0.5)
 #' }
+#'
+#'
+#' @references
+#' Russell, M., Aqil, A., Saitou, M., Gokcumen, O., Masuda, N. (2023). Gene
+#' communities in co-expression networks across different tissues. PLoS
+#' Comput Biol, 19(11). https://doi.org/10.1371/journal.pcbi.1011616
+#'
+#' Bates, D., Maechler, M., & Jagan, M. (2025). Matrix: Sparse and dense matrix
+#' classes and methods (Version 1.7-4).
+#' https://doi.org/10.32614/CRAN.package.Matrix
+#' https://CRAN.R-project.org/package=Matrix
+#'
+#' Silva, A. (2022; revised 2025) TestingPackage: An Example R Package For BCB410H.
+#' Unpublished. URL https://github.com/anjalisilva/TestingPackage.
+#'
+#'
 #' @export
 #' @import Matrix
 buildMultilayerNetwork <- function(

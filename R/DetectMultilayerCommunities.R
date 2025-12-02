@@ -20,22 +20,69 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Using dummy datasets to keep the example code in the functions
-#' # fast and consistent
-#' genes <- paste0("Gene", 1:10)
+#' # Using example data from GTEx, trimmed to be lightweight and usable for
+#' # examples
+#' ?GTExBrainTrimmed
+#' ?GTExHeartTrimmed
+#' ?GTExLiverTrimmed
+#' # Get the coexpression data for each dataset
+#' brainNet <- developCoexpressionNetwork(
+#'                SummarizedExperiment::assay(GTExBrainTrimmed, "tpm"),
+#'                corMethod = "pearson")
+#' heartNet <- developCoexpressionNetwork(
+#'                SummarizedExperiment::assay(GTExHeartTrimmed, "tpm"),
+#'                corMethod = "pearson")
+#' liverNet <- developCoexpressionNetwork(
+#'                SummarizedExperiment::assay(GTExLiverTrimmed, "tpm"),
+#'                corMethod = "pearson")
 #'
-#' Brain  <- matrix(rnorm(10 * 5), nrow = 10,
-#'                  dimnames = list(genes, paste0("B",1:5)))
-#' Heart  <- matrix(rnorm(10 * 5), nrow = 10,
-#'                  dimnames = list(genes, paste0("H",1:5)))
-#' Liver  <- matrix(rnorm(10 * 5), nrow = 10,
-#'                  dimnames = list(genes, paste0("L",1:5)))
-#'
-#' adjList <- list(Brain = Brain, Heart = Heart, Liver = Liver)
-#'
-#' ml <- buildMultilayerNetwork(adjList, threshold = 0.05, omega = 0.5)
-#' comm <- detectMultilayerCommunities(ml)
+#' # Combine them together to prepare them for the multilayer network
+#' layers <- list(Brain = brainNet$adjacency_matrix,
+#'                Heart = heartNet$adjacency_matrix,
+#'                Liver = liverNet$adjacency_matrix)
+#' # Find the common genes
+#' commonGenes <- Reduce(intersect, list(
+#'                       rownames(brainNet$adjacency_matrix),
+#'                       rownames(heartNet$adjacency_matrix),
+#'                       rownames(liverNet$adjacency_matrix)
+#'                      ))
+#' # Building the multilayered network
+#' multilayeredNetwork <- buildMultilayerNetwork(layers,
+#'                                               genes = commonGenes,
+#'                                               matchGenes = TRUE,
+#'                                               omega = 0.5,
+#'                                               threshold = 0.05)
+#' # Detecting the communities
+#' communities <- MultiCoex::detectMultilayerCommunities(multilayeredNetwork)
+#' head(communities$geneMembership)
 #' }
+#'
+#'
+#' @references
+#' Russell, M., Aqil, A., Saitou, M., Gokcumen, O., Masuda, N. (2023). Gene
+#' communities in co-expression networks across different tissues. PLoS
+#' Comput Biol, 19(11). https://doi.org/10.1371/journal.pcbi.1011616
+#'
+#' Bates, D., Maechler, M., & Jagan, M. (2025). Matrix: Sparse and dense matrix
+#' classes and methods (Version 1.7-4).
+#' https://doi.org/10.32614/CRAN.package.Matrix
+#' https://CRAN.R-project.org/package=Matrix
+#'
+#' Silva, A. (2022; revised 2025) TestingPackage: An Example R Package For BCB410H.
+#' Unpublished. URL https://github.com/anjalisilva/TestingPackage.
+#'
+#' Csárdi, G., & Nepusz, T. (2006). The igraph software package for complex
+#' network research. InterJournal, Complex Systems, 1695. https://igraph.org
+#'
+#' Antonov, M., Csárdi, G., Horvát, S., Müller, K., Nepusz, T., Noom, D.,
+#' Salmon, M., Traag, V., Welles, B. F., & Zanini, F. (2023). igraph enables
+#' fast and robust network analysis across programming languages.
+#' arXiv:2311.10260. https://doi.org/10.48550/arXiv.2311.10260
+#'
+#' Csárdi, G., Nepusz, T., Traag, V., Horvát, S., Zanini, F., Noom, D.,
+#' Müller, K., Schoch, D., & Salmon, M. (2025). igraph: Network analysis and
+#' visualization in R (Version 2.2.1). https://doi.org/10.5281/zenodo.7682609
+#' https://CRAN.R-project.org/package=igraph
 #'
 #' @export
 #' @import Matrix
@@ -48,7 +95,8 @@ detectMultilayerCommunities <- function(
   suppressPackageStartupMessages(requireNamespace("Matrix"))
   # --- 1. Performs checks on input -----------------)
   if (!inherits(ml, "buildMultilayerNetworkResult")) {
-    stop("ml must be a `buildMultilayerNetworkResult` object, see `buildMultilayerNetwork()`")
+    stop("ml must be a `buildMultilayerNetworkResult` object, see
+         `buildMultilayerNetwork()`")
   }
 
   set.seed(seed)
