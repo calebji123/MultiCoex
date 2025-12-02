@@ -399,7 +399,7 @@ server <- function(input, output, session) {
     shinyalert(title = "Run coexpression parameters",
                text = "Parameters used to create coexpression data information:
 
-               Uploaded data must be TPM and log normalized data, with up to three layers each requiring a separate file.
+               Uploaded data must be TPM and log normalized data, with up to three layers each requiring a separate file. These files are gene expression files with genes as the rows and samples as the columns. These will be inputted as .csv.
 
                Correlation method describes the statistical test used to correlate gene expression. Use the default (pearson) for the fastest test on the example data.
 
